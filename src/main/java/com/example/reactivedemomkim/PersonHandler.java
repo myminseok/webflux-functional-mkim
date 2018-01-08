@@ -35,11 +35,16 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 
 @Component
 public class PersonHandler {
-	Logger logger = LoggerFactory.getLogger(PersonHandler.class);
+
+	private final PersonRepository repository;
+
+	public PersonHandler(PersonRepository repository) {
+		this.repository = repository;
+	}
+
 	public Mono<ServerResponse> getPerson(ServerRequest request) {
 		int personId = Integer.valueOf(request.pathVariable("id"));
-		Mono<Person> personMono = Mono.just(new Person("James", 20));
-		logger.info("request "+personId);
+		Mono<Person> personMono = repository.getPerson(personId);
 		return personMono
 				.flatMap(person -> ServerResponse.ok().contentType(APPLICATION_JSON).body(fromObject(person)))
 				.log()
@@ -47,17 +52,13 @@ public class PersonHandler {
 	}
 
 	public Mono<ServerResponse> allPeople(ServerRequest request) {
-		//Flux<Person> people = this.repository.allPeople();
-		Flux<Person> people =
-				Flux.just(new Person("James", 20), new Person("Oliver", 30));
-		people.toIterable().forEach(System.out::println);
+		Flux<Person> people = this.repository.allPeople();
 		return ServerResponse.ok().contentType(APPLICATION_JSON).body(people, Person.class);
 	}
 
 	public Mono<ServerResponse> savePerson(ServerRequest request) {
-		//Mono<Person> person = request.bodyToMono(Person.class);
-		//return ServerResponse.ok().build(this.repository.savePerson(person));
-		return ServerResponse.ok().build();
+		Mono<Person> person = request.bodyToMono(Person.class);
+		return ServerResponse.ok().build(this.repository.savePerson(person));
 	}
 
 
